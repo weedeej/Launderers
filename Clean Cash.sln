@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Clean Cash", "Clean Cash\Clean Cash.csproj", "{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		IL2CPP|Any CPU = IL2CPP|Any CPU
+		MONO|Any CPU = MONO|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.IL2CPP|Any CPU.ActiveCfg = IL2CPP|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.IL2CPP|Any CPU.Build.0 = IL2CPP|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.MONO|Any CPU.ActiveCfg = MONO|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.MONO|Any CPU.Build.0 = MONO|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CFA5D93-486A-44DB-AAA5-7E5F0D9554D5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3C9ED0A-DE85-4B6E-97BE-C96656DC0DFF}
+	EndGlobalSection
+EndGlobal
