@@ -8,7 +8,6 @@ using Newtonsoft.Json.Linq;
 using ScheduleOne.NPCs;
 using ScheduleOne.Persistence;
 #endif
-using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
