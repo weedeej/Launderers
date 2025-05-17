@@ -12,7 +12,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-namespace Clean_Cash.LaundererSaveManager
+namespace NPCLaunderers.LaundererSaveManager
 {
 
     [System.Serializable]
@@ -54,6 +54,7 @@ namespace Clean_Cash.LaundererSaveManager
             this.CurrentTimeLeftSeconds = 0f;
             this.isUnlocked = false;
             this.InstanceMaxLaunderAmount = 0f;
+            this.RequiredProductID = "";
             this.CutPercentage = 10f;
 
             string saveDirectory = LoadManager.Instance.LoadedGameFolderPath;
@@ -70,22 +71,22 @@ namespace Clean_Cash.LaundererSaveManager
         }
         public void Save()
         {
-            JObject jObject = new JObject() {
-                ["FirstName"] = this.NPC.FirstName,
-                ["LastName"] = this.NPC.LastName,
-                ["ID"] = this.NPC.ID,
-                ["Tier"] = this.LaundererTier.ToString(),
-                ["MinLaunderAmount"] = this.MinLaunderAmount,
-                ["MaxLaunderAmount"] = this.MaxLaunderAmount,
-                ["isUnlocked"] = this.isUnlocked,
-                ["CutPercentage"] = this.CutPercentage,
-                ["CurrentTimeLeftSeconds"] = this.CurrentTimeLeftSeconds,
-                ["CurrentLaunderAmount"] = this.CurrentLaunderAmount,
-                ["WeekLaunderReturn"] = this.WeekLaunderReturn,
-                ["WeekCutAmount"] = this.WeekCutAmount,
-                ["RequiredProductID"] = this.RequiredProductID,
-                ["InstanceMaxLaunderAmount"] = this.InstanceMaxLaunderAmount
-            };
+            JObject jObject = new JObject();
+            jObject.Add(new JProperty("FirstName", this.NPC.FirstName));
+            jObject.Add(new JProperty("LastName", this.NPC.LastName));
+            jObject.Add(new JProperty("ID", this.NPC.ID));
+            jObject.Add(new JProperty("Tier", this.LaundererTier.ToString()));
+            jObject.Add(new JProperty("MinLaunderAmount", this.MinLaunderAmount));
+            jObject.Add(new JProperty("MaxLaunderAmount", this.MaxLaunderAmount));
+            jObject.Add(new JProperty("isUnlocked", this.isUnlocked));
+            jObject.Add(new JProperty("CutPercentage", this.CutPercentage));
+            jObject.Add(new JProperty("CurrentTimeLeftSeconds", this.CurrentTimeLeftSeconds));
+            jObject.Add(new JProperty("CurrentLaunderAmount", this.CurrentLaunderAmount));
+            jObject.Add(new JProperty("WeekLaunderReturn", this.WeekLaunderReturn));
+            jObject.Add(new JProperty("WeekCutAmount", this.WeekCutAmount));
+            jObject.Add(new JProperty("RequiredProductID", this.RequiredProductID));
+            jObject.Add(new JProperty("InstanceMaxLaunderAmount", this.InstanceMaxLaunderAmount));
+
             File.WriteAllText(this.SaveFilePath, jObject.ToString());
             Debug.Log($"{this.NPC.FirstName} - Saved to: {this.SaveFilePath}");
         }

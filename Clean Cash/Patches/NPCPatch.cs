@@ -1,6 +1,13 @@
-﻿using Clean_Cash.NPCScripts;
-using Clean_Cash.LaundererSaveManager;
+﻿using NPCLaunderers.NPCScripts;
+using NPCLaunderers.LaundererSaveManager;
 using HarmonyLib;
+using MelonLoader;
+using UnityEngine;
+
+
+
+
+
 
 
 #if IL2CPP
@@ -9,7 +16,7 @@ using Il2CppScheduleOne.NPCs;
 using ScheduleOne.NPCs;
 #endif
 
-namespace Clean_Cash.Patches
+namespace NPCLaunderers.Patches
 {
 
     [HarmonyPatch(typeof(NPC))]
@@ -20,7 +27,7 @@ namespace Clean_Cash.Patches
         public static void AddComponent(NPC __instance)
         {
             if (!Launderers.TierOf.ContainsKey(__instance.FirstName)) return;
-            Launderer component = __instance.gameObject.AddComponent<Launderer>();
+            MelonCoroutines.Start(MinPassCoroutine(__instance));
         }
 
         [HarmonyPostfix]
@@ -30,18 +37,36 @@ namespace Clean_Cash.Patches
             if (!Launderers.TierOf.ContainsKey(__instance.FirstName)) return;
             Launderer component = __instance.GetComponent<Launderer>();
             if (component == null) return;
+            
+        }
+
+        private static System.Collections.IEnumerator MinPassCoroutine(NPC __instance)
+        {
+            yield return new WaitForSeconds(3f);
+            Launderer component = __instance.gameObject.AddComponent<Launderer>();
+            if (component.laundererData.isUnlocked)
+            {
+                if (!(component.isMainDialogueReady && component.withContract) || (component.laundererData.RequiredProductID != "" && !component.withContract))
+                {
+                    component.Start();
+                }
+            }
+            else
+            {
+                if (!component.isDialogueInitReady)
+                {
+                    component.Start();
+                }
+            }
             if (component.laundererData.isUnlocked && component.laundererData.CurrentLaunderAmount > 0f)
             {
                 if (component.laundererData.CurrentTimeLeftSeconds > 0f)
                 {
                     component.laundererData.CurrentTimeLeftSeconds -= 1;
-                    return;
+                    yield break;
                 }
                 component.GiveLaunderedPay();
-                return;
             }
-            if (component.isDialogueInitReady || component.isMainDialogueReady) return;
-            component.Start();
         }
     }
 }

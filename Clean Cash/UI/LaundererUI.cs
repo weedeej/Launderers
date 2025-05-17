@@ -1,19 +1,26 @@
-﻿using Clean_Cash.NPCScripts;
+﻿using NPCLaunderers.NPCScripts;
 using UnityEngine;
 using UnityEngine.UIElements;
 using MelonLoader;
+
+
+
+
+
 #if IL2CPP
 using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.Money;
 using Il2CppScheduleOne.UI;
 using Il2CppSystem.Linq;
+using Il2CppScheduleOne.PlayerScripts;
 #else
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Money;
 using ScheduleOne.UI;
+using ScheduleOne.PlayerScripts;
 #endif
 
-namespace Clean_Cash.UI
+namespace NPCLaunderers.UI
 {
     public class LaundererUI
     {
@@ -86,6 +93,7 @@ namespace Clean_Cash.UI
 
             amountField.label = amountField.label.Replace("<MaxLaunder>", $"{this.launderer.laundererData.InstanceMaxLaunderAmount}");
             npcName.text = npcName.text.Replace("<NPCNAME>", this.launderer.nPC.fullName);
+
 #if IL2CPP
             submitButton.RegisterCallback<ClickEvent>(new Action<ClickEvent>(ev =>
 #else
@@ -106,7 +114,7 @@ namespace Clean_Cash.UI
                     if (inputValue > this.launderer.laundererData.InstanceMaxLaunderAmount)
                     {
                         MelonLogger.Error($"Input value {inputValue} exceeds max launder amount {this.launderer.laundererData.InstanceMaxLaunderAmount}");
-                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>You can only launder ${this.launderer.laundererData.InstanceMaxLaunderAmount}</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>Max of ${this.launderer.laundererData.InstanceMaxLaunderAmount}</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
                         return;
                     }
                     moneyManager.ChangeCashBalance(-inputValue, true, true);
@@ -138,10 +146,15 @@ namespace Clean_Cash.UI
             {
                 this.Close();
             }));
+
+            PlayerSingleton<PlayerCamera>.Instance.AddActiveUIElement(this.gameObject.name);
+            Player.Deactivate(true);
         }
 
         private void Hide()
         {
+            PlayerSingleton<PlayerCamera>.Instance.RemoveActiveUIElement(this.gameObject.name);
+            Player.Activate();
             GameObject.Destroy(this.gameObject);
         }
     }

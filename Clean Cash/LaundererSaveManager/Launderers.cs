@@ -1,4 +1,4 @@
-﻿namespace Clean_Cash.LaundererSaveManager
+﻿namespace NPCLaunderers.LaundererSaveManager
 {
     public enum LaundererTier
     {

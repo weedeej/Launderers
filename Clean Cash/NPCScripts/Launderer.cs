@@ -24,14 +24,14 @@ using ScheduleOne.UI;
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Money;
 using ScheduleOne.ItemFramework;
+using UnityEngine.Events;
 #endif
 using UnityEngine;
-using Clean_Cash.LaundererSaveManager;
-using Clean_Cash.UI;
+using NPCLaunderers.LaundererSaveManager;
+using NPCLaunderers.UI;
 using MelonLoader;
-using UnityEngine.Events;
 
-namespace Clean_Cash.NPCScripts
+namespace NPCLaunderers.NPCScripts
 {
     public class Launderer : MonoBehaviour
     {
@@ -42,6 +42,7 @@ namespace Clean_Cash.NPCScripts
         public DialogueController dialogueController;
         private LaundererUI laundererUI;
         private float upfrontInstance;
+        public bool withContract;
 
 #if IL2CPP
         public Launderer(IntPtr pointer) : base(pointer) { }
@@ -58,19 +59,47 @@ namespace Clean_Cash.NPCScripts
             this.nPC = npc;
         }
 
+        private System.Collections.IEnumerator LoadLaundererData()
+        {
+            yield return new WaitForSecondsRealtime(5f);
+            if (this.laundererData == null || this.laundererData.RequiredProductID == "") yield break;
+            Contract activeContract =
+                Contract.Contracts
+#if IL2CPP
+                ._items
+                .FirstOrDefault(c => {
+                    return c.QuestState == EQuestState.Active && c.title.Contains(this.nPC.FirstName);
+                }, null); // Don't remove pls T.T
+#else
+                .Find(c => c.QuestState == EQuestState.Active && c.title.Contains(this.nPC.FirstName));
+#endif
+            if (
+                activeContract != null &&
+                !this.withContract
+                )
+            {
+                MelonCoroutines.Start(this.AddContractListener());
+            }
+        }
+
         public void Start()
         {
-            if (this.laundererData.isUnlocked && !this.isMainDialogueReady)
-            {
-                SetupLaunderDialog();
-                return;
-            }
             if (
                 this.laundererData == null ||
-                this.nPC.RelationData.RelationDelta < 4f
+                this.nPC.RelationData.RelationDelta < 4f // CHANGE
                 ) return;
+
             this.dialogueController = this.nPC.dialogueHandler.GetComponent<DialogueController>();
             if (this.dialogueController == null) return;
+            if (!this.isMainDialogueReady && this.laundererData.isUnlocked)
+            {
+                SetupLaunderDialog();
+            }
+            if (this.laundererData.isUnlocked && !withContract && this.laundererData.RequiredProductID != null)
+            {
+                MelonCoroutines.Start(LoadLaundererData());
+                return;
+            }
             this.upfrontInstance = Mathf.Floor(UnityEngine.Random.Range(this.laundererData.MinLaunderAmount, this.laundererData.MaxLaunderAmount));
             AddInitChoice();
         }
@@ -193,11 +222,30 @@ namespace Clean_Cash.NPCScripts
             }
         }
 
-        public void RequireMix()
+        public void RequireMix(string productId = null)
         {
             if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
-            int randomIndex = UnityEngine.Random.Range(0, ProductManager.DiscoveredProducts.Count - 1);
-            ProductDefinition randomProduct = ProductManager.DiscoveredProducts[randomIndex];
+            ProductDefinition randomProduct;
+            if (productId == null)
+            {
+                int randomIndex = UnityEngine.Random.Range(0, ProductManager.DiscoveredProducts.Count - 1);
+                randomProduct = ProductManager.DiscoveredProducts[randomIndex];
+            } else
+            {
+                randomProduct = ProductManager.DiscoveredProducts
+#if IL2CPP
+                    ._items.FirstOrDefault(p => p.ID == productId);
+#else
+                    .Find(p => p.ID == productId);
+#endif
+                if (randomProduct == null)
+                {
+                    MelonLogger.Error($"Product with ID {productId} not found.");
+                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#f54c4c>Product not found</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                    return;
+                }
+            }
+
             this.laundererData.RequiredProductID = randomProduct.ID;
 
 #if IL2CPP
@@ -210,26 +258,28 @@ namespace Clean_Cash.NPCScripts
                 Quality = randomProduct.DrugType == EDrugType.Methamphetamine ? EQuality.Premium : EQuality.Heavenly,
                 Quantity = 3
             };
+            // Not adding listener on Mono
             entries.Add(entry);
             ProductList productList = new ProductList() { entries = entries };
 
             DeliveryLocation[] locations = DeliveryLocation.FindObjectsOfType<DeliveryLocation>();
             DeliveryLocation deliveryLocation = locations[UnityEngine.Random.Range(0, locations.Length)];
 
-            ContractInfo contractInfo = new ContractInfo(0, new ProductList() { entries = entries }, deliveryLocation.StaticGUID, new QuestWindowConfig { WindowStartTime = 600, WindowEndTime = 1200, IsEnabled = true }, true, 1300, 0,  false);
+            ContractInfo contractInfo = new ContractInfo(0, new ProductList() { entries = entries }, deliveryLocation.StaticGUID, new QuestWindowConfig { WindowStartTime = 600, WindowEndTime = 1200, IsEnabled = true }, false, 1300, 0, false);
             
-            QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1100), TimeManager.Instance.GetDateTime());
+            QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
             
             string message = $"Hey, I wanna strengthen our partnership. How about we do a session.\n\nI need you to bring me <color=#6b9cff>3x {randomProduct.Name}</color> in <b>BEST</b> quality you can get at <color=#6b9cff>6:00am to 12:00pm</color>.\nMeet me <color=#6b9cff>{deliveryLocation.LocationDescription}</color>.";
-            string contractName = $"Deal for {this.nPC.FirstName}";
-            MelonCoroutines.Start(this.AddContractListener(contractName));
+            //MelonCoroutines.Start(this.AddContractListener());
 
              this.nPC.SendTextMessage(message);
         }
 
-        private System.Collections.IEnumerator AddContractListener(string contractName)
+        private System.Collections.IEnumerator AddContractListener()
         {
             yield return new WaitForSecondsRealtime(3f);
+            if (this.withContract) yield break;
+            string contractName = $"Deal for {this.nPC.FirstName}";
             Contract contract = Contract.Contracts
 #if IL2CPP
                 ._items
@@ -268,7 +318,7 @@ namespace Clean_Cash.NPCScripts
                             randomCutIncrease = Mathf.Floor(UnityEngine.Random.Range(1, 10));
                         }
                         this.laundererData.CutPercentage += randomCutIncrease;
-                        this.laundererData.RequiredProductID = string.Empty;
+                        this.laundererData.RequiredProductID = "";
                         message = $"Ignoring me huh. I'm increasing my cut to <color=#ff6b6b>{this.laundererData.CutPercentage}%</color>";
                         this.nPC.SendTextMessage(message);
                         break;
@@ -284,7 +334,7 @@ namespace Clean_Cash.NPCScripts
                             randomCutIncrease = Mathf.Floor(UnityEngine.Random.Range(1, 10));
                         }
                         this.laundererData.CutPercentage += randomCutIncrease;
-                        this.laundererData.RequiredProductID = string.Empty;
+                        this.laundererData.RequiredProductID = "";
                         message = $"I don't like the way you acted earlier. I'm increasing my cut to <color=#ff6b6b>{this.laundererData.CutPercentage}%</color>";
                         this.nPC.SendTextMessage(message);
                         break;
@@ -300,7 +350,7 @@ namespace Clean_Cash.NPCScripts
                             randomReduceCut = Mathf.Floor(UnityEngine.Random.Range(1, 10));
                         }
                         this.laundererData.CutPercentage -= randomReduceCut;
-                        this.laundererData.RequiredProductID = string.Empty;
+                        this.laundererData.RequiredProductID = "";
                         message = $"Hey, I appreciate you bringing me the goods. I'll reduce my cut to <color=#ff6b6b>{this.laundererData.CutPercentage}%</color>.";
                         this.nPC.SendTextMessage(message);
                         break;
@@ -309,9 +359,13 @@ namespace Clean_Cash.NPCScripts
                         MelonLogger.Msg(result);
                         break;
                 }
+                this.laundererData.RequiredProductID = "";
                 contract.onQuestEnd.RemoveAllListeners();
+                this.withContract = false;
             });
             contract.onQuestEnd.AddListener(questEndListener);
+            this.withContract = true;
+            MelonLogger.Msg($"{this.nPC.FirstName}: Added active contract listner");
             yield break;
         }
 

@@ -2,19 +2,20 @@
 using Il2CppInterop.Runtime.Injection;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.GameTime;
+using NPCLaunderers.LaundererSaveManager;
 #else
 using ScheduleOne.Persistence;
 using ScheduleOne.GameTime;
 using UnityEngine.Events;
 #endif
-using Clean_Cash.NPCScripts;
+using NPCLaunderers.NPCScripts;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(Clean_Cash.Core), "Clean Cash", "1.0.0", "weedeej", null)]
+[assembly: MelonInfo(typeof(NPCLaunderers.Core), "NPCLaunderers", "1.0.0", "weedeej", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
-namespace Clean_Cash
+namespace NPCLaunderers
 {
     public class Core : MelonMod
     {
@@ -30,7 +31,7 @@ namespace Clean_Cash
             ClassInjector.RegisterTypeInIl2Cpp<LaundererData>();
             try
             {
-                Stream bundleStream = MelonAssembly.Assembly.GetManifestResourceStream("Clean_Cash.Assets.launderers.assetbundle");
+                Stream bundleStream = MelonAssembly.Assembly.GetManifestResourceStream("NPCLaunderers.Assets.launderers.assetbundle");
                 if (bundleStream == null)
                 {
                     this.Unregister($"AssetBundle stream not found");
@@ -51,8 +52,9 @@ namespace Clean_Cash
                 return;
             }
 #else
-            try {
-                var stream = MelonAssembly.Assembly.GetManifestResourceStream("Clean_Cash.Assets.launderers.assetbundle");
+            try
+            {
+                var stream = MelonAssembly.Assembly.GetManifestResourceStream("NPCLaunderers.Assets.launderers.assetbundle");
 
                 if (stream == null)
                 {
