@@ -100,6 +100,10 @@ namespace NPCLaunderers.NPCScripts
                 MelonCoroutines.Start(LoadLaundererData());
                 return;
             }
+            if (!this.laundererData.isUnlocked)
+            {
+                this.nPC.SendTextMessage($"Hey, Let me know if you need a partnership.");
+            }
             this.upfrontInstance = Mathf.Floor(UnityEngine.Random.Range(this.laundererData.MinLaunderAmount, this.laundererData.MaxLaunderAmount));
             AddInitChoice();
         }

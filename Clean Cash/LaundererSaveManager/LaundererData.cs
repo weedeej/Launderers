@@ -28,7 +28,6 @@ namespace NPCLaunderers.LaundererSaveManager
         public LaundererTier LaundererTier;
         public double CutPercentage;
         public bool isUnlocked;
-        private string SaveFilePath;
         public float CurrentTimeLeftSeconds;
         public float CurrentLaunderAmount;
         public float WeekLaunderReturn;
@@ -37,6 +36,7 @@ namespace NPCLaunderers.LaundererSaveManager
         public float InstanceMaxLaunderAmount;
         public float ReturnLaunderAmount { get => Mathf.Floor(this.CurrentLaunderAmount - (this.CurrentLaunderAmount * (float)(this.CutPercentage / 100))); }
         public float CutAmount { get => Mathf.Floor(this.CurrentLaunderAmount * (float)(this.CutPercentage / 100)); }
+        private string SaveFilePath;
 
 #if IL2CPP
         public LaundererData(System.IntPtr ptr) : base(ptr) { }
