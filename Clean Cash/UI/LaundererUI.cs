@@ -2,6 +2,8 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using MelonLoader;
+using MelonLoader.Utils;
+
 
 
 
@@ -85,6 +87,10 @@ namespace NPCLaunderers.UI
             UIDocument doc = this.gameObject.GetComponent<UIDocument>();
             VisualElement rootVisual = doc.rootVisualElement;
             VisualElement content = rootVisual.Q<VisualElement>("LaundererContent");
+            VisualElement header = content.Q<VisualElement>("Header");
+            Label version = header.Q<Label>("Version");
+            version.text = MelonAssembly.FindMelonInstance<Core>().Info.Version;
+
             VisualElement buttons = content.Q<VisualElement>("buttons");
             Button closeButton = buttons.Q<Button>("btn_close");
             Button submitButton = buttons.Q<Button>("btn_submit");
