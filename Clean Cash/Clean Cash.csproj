@@ -473,6 +473,9 @@
 
 	</ItemGroup>
 	<ItemGroup Condition="'$(Configuration)' == 'IL2CPP'">
+		<Reference Include="UnityEngine.Il2CppAssetBundleManager">
+			<HintPath>Libs\UnityEngine.Il2CppAssetBundleManager.dll</HintPath>
+		</Reference>
 		<Reference Include="Assembly-CSharp-firstpass">
 			<HintPath>D:\Program Files (x86)\Steam\steamapps\common\Schedule I(IL2CPP)\MelonLoader\Il2CppAssemblies\Assembly-CSharp-firstpass.dll</HintPath>
 		</Reference>
@@ -918,11 +921,18 @@
 		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 	</PropertyGroup>
 
+	<ItemGroup Condition="'$(Configuration)' == 'IL2CPP'">
+		<EmbeddedResource Include="Assets\launderers.assetbundle" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<Compile Include="Core.cs" />
 		<Compile Include="NPCScripts\Launderer.cs" />
-		<Compile Include="SaveManager\LaundererData.cs" />
-		<Compile Include="SaveManager\Launderers.cs" />
+		<Compile Include="NPCScripts\NPCUtilities.cs" />
+		<Compile Include="Patches\NPCPatch.cs" />
+		<Compile Include="LaundererSaveManager\LaundererData.cs" />
+		<Compile Include="LaundererSaveManager\Launderers.cs" />
+		<Compile Include="UI\LaundererUI.cs" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'MONO'">
@@ -941,14 +951,13 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup Condition="'$(Configuration)' == 'IL2CPP'">
-		<Publicize Include="Assembly-CSharp:Il2CppScheduleOne.Console" />
-		<Publicize Include="Assembly-CSharp:Il2CppScheduleOne.Console.commands" />
-		<Publicize Include="Assembly-CSharp:Il2CppScheduleOne.Console.Awake" />
-		<Publicize Include="Assembly-CSharp:Il2CppScheduleOne.Console.ConsoleCommand" />
+		<Publicize Include="Assembly-CSharp:Il2CppScheduleOne.NPCs.NPC.Start" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(Configuration)' == 'MONO'">
-		<Publicize Include="Assembly-CSharp:ScheduleOne.Persistence.ISaveable.SaveFileName" />
-		<Publicize Include="Assembly-CSharp:ScheduleOne.Persistence.ISaveable.SaveFolderName" />
+		<Publicize Include="Assembly-CSharp:ScheduleOne.NPCs.NPC.Start" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Libs\" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="tasklist | findstr /I &quot;Schedule.*I.exe&quot; &gt;nul &amp;&amp; taskkill /F /IM &quot;Schedule I.exe&quot;&#xD;&#xA;COPY &quot;$(TargetPath)&quot; &quot;$(S1Dir)\Mods&quot;&#xD;&#xA;START &quot;&quot; &quot;$(S1Dir)\Schedule I.exe&quot;" />

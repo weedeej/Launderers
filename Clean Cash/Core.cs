@@ -1,16 +1,14 @@
 ﻿#if IL2CPP
-using Clean_Cash.NPCScripts;
-using Clean_Cash.SaveManager;
-using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Injection;
-using Il2CppScheduleOne.NPCs;
-using Il2CppScheduleOne.NPCs.CharacterClasses;
-using Il2CppSystem;
-
-
+using Il2CppScheduleOne.Persistence;
+using Il2CppScheduleOne.GameTime;
 #else
-using Newtonsoft.Json.Linq;
+using ScheduleOne.Runtime.Injection;
+using ScheduleOne.Persistence;
+using ScheduleOne.GameTime;
 #endif
+using Clean_Cash.NPCScripts;
+using Clean_Cash.LaundererSaveManager;
 using MelonLoader;
 using UnityEngine;
 
@@ -21,10 +19,43 @@ namespace Clean_Cash
 {
     public class Core : MelonMod
     {
+        Il2CppAssetBundle bundle;
         public override void OnInitializeMelon()
         {
 #if IL2CPP
             ClassInjector.RegisterTypeInIl2Cpp<Launderer>();
+            ClassInjector.RegisterTypeInIl2Cpp<LaundererData>();
+            try
+            {
+                Stream bundleStream = MelonAssembly.Assembly.GetManifestResourceStream("Clean_Cash.Assets.launderers.assetbundle");
+                if (bundleStream == null)
+                {
+                    this.Unregister($"AssetBundle stream not found");
+                    return;
+                }
+                byte[] bundleData;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    bundleStream.CopyTo(ms);
+                    bundleData = ms.ToArray();
+                }
+                Il2CppSystem.IO.Stream stream = new Il2CppSystem.IO.MemoryStream(bundleData);
+                bundle = Il2CppAssetBundleManager.LoadFromStream(stream);
+            }
+            catch (Exception e)
+            {
+                this.Unregister($"Failed to load AssetBundle. Please report to dev: {e}");
+                return;
+            }
+#else
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Clean_Cash.Assets.launderers.assetbundle");
+
+            if (stream == null)
+            {
+                this.Unregister($"AssetBundle stream not found");
+                return;
+            }
+            bundle = AssetBundle.LoadFromStream(stream);
 #endif
             LoggerInstance.Msg("Initialized.");
         }
@@ -40,24 +71,22 @@ namespace Clean_Cash
 
         private System.Collections.IEnumerator DelayedStart()
         {
-            yield return new WaitForSeconds(5.0f);
-            try
+            yield return new WaitForSecondsRealtime(5f);
+            Action saveListener = new Action(() =>
             {
-                LoggerInstance.Msg(1);
-                Marco donna = GameObject.FindObjectOfType<Marco>();
-                if (donna == null)
+                foreach (Launderer launderer in GameObject.FindObjectsOfType<Launderer>())
                 {
-                    LoggerInstance.Error("Donna not found.");
-                    yield break;
+                    launderer.laundererData.Save();
                 }
-                LoggerInstance.Msg(2);
-                LaundererData laundererData = new LaundererData(donna);
-                LoggerInstance.Msg(3);
-                laundererData.Save();
-            } catch (System.Exception e)
-            {
-                LoggerInstance.Error($"Error: {e.Message}");
-            }
+            });
+            Action weekPassListener = new Action(() => {
+                foreach (Launderer launderer in GameObject.FindObjectsOfType<Launderer>())
+                {
+                    launderer.WeekPass();
+                }
+            });
+            SaveManager.Instance.onSaveStart.AddListener(saveListener);
+            TimeManager.Instance.onWeekPass += weekPassListener;
         }
 
     }
