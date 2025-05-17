@@ -44,7 +44,7 @@ Launder Range (random)
 
 ## Bug Reports and Feedback
 
-If you encounter any bugs or have suggestions for improvement, please feel free to open an issue on [this Github repository](https://github.com/weedeej/Toileportation) or in the discord linked below (Find this mod under mod-releases channel). Your feedback is highly appreciated!
+If you encounter any bugs or have suggestions for improvement, please feel free to open an issue on [this Github repository](https://github.com/weedeej/Launderers) or in the discord linked below (Find this mod under mod-releases channel). Your feedback is highly appreciated!
 
 ## Contributing
 
