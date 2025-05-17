@@ -3,12 +3,11 @@ using Il2CppInterop.Runtime.Injection;
 using Il2CppScheduleOne.Persistence;
 using Il2CppScheduleOne.GameTime;
 #else
-using ScheduleOne.Runtime.Injection;
 using ScheduleOne.Persistence;
 using ScheduleOne.GameTime;
+using UnityEngine.Events;
 #endif
 using Clean_Cash.NPCScripts;
-using Clean_Cash.LaundererSaveManager;
 using MelonLoader;
 using UnityEngine;
 
@@ -19,7 +18,11 @@ namespace Clean_Cash
 {
     public class Core : MelonMod
     {
+#if IL2CPP
         Il2CppAssetBundle bundle;
+#else
+        AssetBundle bundle;
+#endif
         public override void OnInitializeMelon()
         {
 #if IL2CPP
@@ -48,14 +51,21 @@ namespace Clean_Cash
                 return;
             }
 #else
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Clean_Cash.Assets.launderers.assetbundle");
+            try {
+                var stream = MelonAssembly.Assembly.GetManifestResourceStream("Clean_Cash.Assets.launderers.assetbundle");
 
-            if (stream == null)
+                if (stream == null)
+                {
+                    this.Unregister($"AssetBundle stream not found");
+                    return;
+                }
+                bundle = AssetBundle.LoadFromStream(stream);
+            }
+            catch (Exception e)
             {
-                this.Unregister($"AssetBundle stream not found");
+                this.Unregister($"Failed to load AssetBundle. Please report to dev: {e}");
                 return;
             }
-            bundle = AssetBundle.LoadFromStream(stream);
 #endif
             LoggerInstance.Msg("Initialized.");
         }
@@ -72,7 +82,11 @@ namespace Clean_Cash
         private System.Collections.IEnumerator DelayedStart()
         {
             yield return new WaitForSecondsRealtime(5f);
+#if IL2CPP
             Action saveListener = new Action(() =>
+#else
+            UnityAction saveListener = new UnityAction(() =>
+#endif
             {
                 foreach (Launderer launderer in GameObject.FindObjectsOfType<Launderer>())
                 {

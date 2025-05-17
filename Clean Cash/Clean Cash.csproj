@@ -921,7 +921,7 @@
 		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 	</PropertyGroup>
 
-	<ItemGroup Condition="'$(Configuration)' == 'IL2CPP'">
+	<ItemGroup>
 		<EmbeddedResource Include="Assets\launderers.assetbundle" />
 	</ItemGroup>
 
@@ -955,6 +955,8 @@
 	</ItemGroup>
 	<ItemGroup Condition="'$(Configuration)' == 'MONO'">
 		<Publicize Include="Assembly-CSharp:ScheduleOne.NPCs.NPC.Start" />
+		<Publicize Include="Assembly-CSharp:ScheduleOne.NPCs.NPC.MinPass" />
+		<Publicize Include="Assembly-CSharp:ScheduleOne.Quests.Quest.title" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="Libs\" />

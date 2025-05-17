@@ -87,7 +87,7 @@ namespace Clean_Cash.LaundererSaveManager
                 ["InstanceMaxLaunderAmount"] = this.InstanceMaxLaunderAmount
             };
             File.WriteAllText(this.SaveFilePath, jObject.ToString());
-            MelonLogger.Msg($"{this.NPC.FirstName} - Saved to: {this.SaveFilePath}");
+            Debug.Log($"{this.NPC.FirstName} - Saved to: {this.SaveFilePath}");
         }
 
         public LaundererData Load()

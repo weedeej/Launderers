@@ -11,7 +11,6 @@ using Il2CppSystem.Linq;
 using ScheduleOne.DevUtilities;
 using ScheduleOne.Money;
 using ScheduleOne.UI;
-using ScheduleOne.Linq;
 #endif
 
 namespace Clean_Cash.UI
@@ -34,7 +33,7 @@ namespace Clean_Cash.UI
             if (loadedBundles.Length == 1) bundle = loadedBundles[0];
 #else
             var loadedBundles = AssetBundle.GetAllLoadedAssetBundles().ToList();
-            if (loadedBundles.Length == 1) bundle = loadedBundles[0];
+            if (loadedBundles.Count == 1) bundle = loadedBundles[0];
 #endif
 
             else
@@ -77,26 +76,21 @@ namespace Clean_Cash.UI
             this.gameObject = bundle.LoadAsset<GameObject>("assets/laundererui.prefab");
             this.gameObject = GameObject.Instantiate(this.gameObject);
             UIDocument doc = this.gameObject.GetComponent<UIDocument>();
-            MelonLogger.Msg(7);
             VisualElement rootVisual = doc.rootVisualElement;
-            MelonLogger.Msg(6);
             VisualElement content = rootVisual.Q<VisualElement>("LaundererContent");
-
-            MelonLogger.Msg(5);
             VisualElement buttons = content.Q<VisualElement>("buttons");
-            MelonLogger.Msg(4);
             Button closeButton = buttons.Q<Button>("btn_close");
             Button submitButton = buttons.Q<Button>("btn_submit");
-            MelonLogger.Msg(1);
             IntegerField amountField = content.Q<IntegerField>("NumberInput");
-            MelonLogger.Msg(2);
             Label npcName = amountField.Q<Label>("NpcName");
-            MelonLogger.Msg(3);
 
             amountField.label = amountField.label.Replace("<MaxLaunder>", $"{this.launderer.laundererData.InstanceMaxLaunderAmount}");
             npcName.text = npcName.text.Replace("<NPCNAME>", this.launderer.nPC.fullName);
-
+#if IL2CPP
             submitButton.RegisterCallback<ClickEvent>(new Action<ClickEvent>(ev =>
+#else
+            submitButton.RegisterCallback<ClickEvent>(ev =>
+#endif
             {
                 MoneyManager moneyManager = NetworkSingleton<MoneyManager>.Instance;
                 try
@@ -117,8 +111,8 @@ namespace Clean_Cash.UI
                     }
                     moneyManager.ChangeCashBalance(-inputValue, true, true);
                     this.launderer.laundererData.CurrentLaunderAmount = inputValue;
-                    this.launderer.laundererData.CurrentTimeLeftSeconds = 10; // 720; // Half-day in-game
-                    string message = $"Laundering <color=#16F01C>${inputValue}</color>.I will transfer <color=#38f577>${this.launderer.laundererData.ReturnLaunderAmount}</color> to your account in 12 hours.";
+                    this.launderer.laundererData.CurrentTimeLeftSeconds = 720; // 720; // Half-day in-game
+                    string message = $"Laundering <color=#16F01C>${inputValue}</color>.I will transfer <color=#6b9cff>${this.launderer.laundererData.ReturnLaunderAmount}</color> to your account in 12 hours.";
                     this.launderer.nPC.SendTextMessage(message);
                     this.Close();
                 }
@@ -130,9 +124,17 @@ namespace Clean_Cash.UI
                         Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>Invalid input value</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
                     }
                 }
+#if IL2CPP
             }));
+#else
+            });
+#endif
 
+#if IL2CPP
             closeButton.RegisterCallback<ClickEvent>(new Action<ClickEvent>(ev =>
+#else
+            closeButton.RegisterCallback<ClickEvent>((ev =>
+#endif
             {
                 this.Close();
             }));
