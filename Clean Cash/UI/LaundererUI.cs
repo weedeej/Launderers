@@ -108,13 +108,13 @@ namespace NPCLaunderers.UI
                     if (moneyManager.cashBalance < inputValue)
                     {
                         MelonLogger.Error($"Input value {inputValue} exceeds cash balance {moneyManager.cashBalance}");
-                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>You don't have enough money</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>You don't have enough money</color>", this.launderer.nPC.MugshotSprite, 5f, true);
                         return;
                     }
                     if (inputValue > this.launderer.laundererData.InstanceMaxLaunderAmount)
                     {
                         MelonLogger.Error($"Input value {inputValue} exceeds max launder amount {this.launderer.laundererData.InstanceMaxLaunderAmount}");
-                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>Max of ${this.launderer.laundererData.InstanceMaxLaunderAmount}</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>Max of ${this.launderer.laundererData.InstanceMaxLaunderAmount}</color>", this.launderer.nPC.MugshotSprite, 5f, true);
                         return;
                     }
                     moneyManager.ChangeCashBalance(-inputValue, true, true);
@@ -129,7 +129,7 @@ namespace NPCLaunderers.UI
                     MelonLogger.Error($"Failed to load LaundererUI: {e}");
                     if (e is FormatException)
                     {
-                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>Invalid input value</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                        Singleton<NotificationsManager>.Instance.SendNotification(this.launderer.nPC.FirstName, $"<color=#f54c4c>Invalid input value</color>", this.launderer.nPC.MugshotSprite, 5f, true);
                     }
                 }
 #if IL2CPP

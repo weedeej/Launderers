@@ -136,7 +136,7 @@ namespace NPCLaunderers.NPCScripts
             {
                 if (this.laundererData.CurrentLaunderAmount > 0f || this.laundererData.CurrentTimeLeftSeconds > 0)
                 {
-                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"Laundering <color=#16F01C>${this.laundererData.CurrentLaunderAmount}</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"Laundering <color=#16F01C>${this.laundererData.CurrentLaunderAmount}</color>", this.nPC.MugshotSprite, 5f, true);
                     return;
                 }
                 this.laundererData.InstanceMaxLaunderAmount = Mathf.Floor(UnityEngine.Random.Range(this.laundererData.MinLaunderAmount, this.laundererData.MaxLaunderAmount));
@@ -154,7 +154,7 @@ namespace NPCLaunderers.NPCScripts
                 this.laundererData.ReturnLaunderAmount, 1, "");
             string message = $"Hey, I sent <color=#2e75d9>${this.laundererData.ReturnLaunderAmount}</color> to your bank. \n\nMy Cut: <color=#eb4034>${this.laundererData.CutAmount}</color>";
             this.nPC.SendTextMessage(message);
-            Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#16F01C>${this.laundererData.CurrentLaunderAmount}</color> Laundered", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+            Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#16F01C>${this.laundererData.CurrentLaunderAmount}</color> Laundered", this.nPC.MugshotSprite, 5f, true);
             this.laundererData.WeekLaunderReturn += this.laundererData.ReturnLaunderAmount;
             this.laundererData.WeekCutAmount += this.laundererData.CutAmount;
             this.laundererData.CurrentLaunderAmount = 0f;
@@ -202,7 +202,7 @@ namespace NPCLaunderers.NPCScripts
                 if (randomProduct == null)
                 {
                     MelonLogger.Error($"Product with ID {productId} not found.");
-                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#f54c4c>Product not found</color>", NetworkSingleton<MoneyManager>.Instance.LaunderingNotificationIcon, 5f, true);
+                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#f54c4c>Product not found</color>", this.nPC.MugshotSprite, 5f, true);
                     return;
                 }
             }
