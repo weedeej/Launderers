@@ -30,6 +30,7 @@ using UnityEngine;
 using NPCLaunderers.LaundererSaveManager;
 using NPCLaunderers.UI;
 using MelonLoader;
+using UnityEngine.InputSystem;
 
 namespace NPCLaunderers.NPCScripts
 {
@@ -43,6 +44,10 @@ namespace NPCLaunderers.NPCScripts
         private LaundererUI laundererUI;
         private float upfrontInstance;
         public bool withContract;
+        private bool isCheckingLaundry = false;
+        private bool isCheckingDialouge = false;
+        private bool isCheckingSavedLaundry = false;
+        private bool isFriendly = false;
 
 #if IL2CPP
         public Launderer(IntPtr pointer) : base(pointer) { }
@@ -57,55 +62,7 @@ namespace NPCLaunderers.NPCScripts
             }
             this.laundererData = (new LaundererData(npc)).Load();
             this.nPC = npc;
-        }
-
-        private System.Collections.IEnumerator LoadLaundererData()
-        {
-            yield return new WaitForSecondsRealtime(5f);
-            if (this.laundererData == null || this.laundererData.RequiredProductID == "") yield break;
-            Contract activeContract =
-                Contract.Contracts
-#if IL2CPP
-                ._items
-                .FirstOrDefault(c => {
-                    return c.QuestState == EQuestState.Active && c.title.Contains(this.nPC.FirstName);
-                }, null); // Don't remove pls T.T
-#else
-                .Find(c => c.QuestState == EQuestState.Active && c.title.Contains(this.nPC.FirstName));
-#endif
-            if (
-                activeContract != null &&
-                !this.withContract
-                )
-            {
-                MelonCoroutines.Start(this.AddContractListener());
-            }
-        }
-
-        public void Start()
-        {
-            if (
-                this.laundererData == null ||
-                this.nPC.RelationData.RelationDelta < 4f // CHANGE
-                ) return;
-
-            this.dialogueController = this.nPC.dialogueHandler.GetComponent<DialogueController>();
-            if (this.dialogueController == null) return;
-            if (!this.isMainDialogueReady && this.laundererData.isUnlocked)
-            {
-                SetupLaunderDialog();
-            }
-            if (this.laundererData.isUnlocked && !withContract && this.laundererData.RequiredProductID != null)
-            {
-                MelonCoroutines.Start(LoadLaundererData());
-                return;
-            }
-            if (!this.laundererData.isUnlocked)
-            {
-                this.nPC.SendTextMessage($"Hey, Let me know if you need a partnership.");
-            }
-            this.upfrontInstance = Mathf.Floor(UnityEngine.Random.Range(this.laundererData.MinLaunderAmount, this.laundererData.MaxLaunderAmount));
-            AddInitChoice();
+            this.isFriendly = npc.RelationData.RelationDelta >= 4f;
         }
 
         private void AddInitChoice()
@@ -165,14 +122,15 @@ namespace NPCLaunderers.NPCScripts
         private void SetupLaunderDialog()
         {
             if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
+
             if (this.laundererUI == null) {
                 this.laundererUI = new LaundererUI(this);
             }
+
             DialogueChoice newChoice = new DialogueChoice() { Enabled = true, ChoiceText = "Launder Dirties" };
 #if IL2CPP
             newChoice.onChoosen.AddListener(new Action(() =>
 #else
-
             newChoice.onChoosen.AddListener((() =>
 #endif
             {
@@ -209,8 +167,7 @@ namespace NPCLaunderers.NPCScripts
             if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
             double shouldRandomizeChance = UnityEngine.Random.Range(0f, 100f);
             float weeklyCutPayDiff = this.laundererData.WeekLaunderReturn - this.laundererData.WeekCutAmount;
-            // if weeklycutpaydiff > 80% of the laundered amount, then randomize cut
-            if (weeklyCutPayDiff > (this.laundererData.CurrentLaunderAmount * 0.8f) && shouldRandomizeChance < 10f)
+            if (weeklyCutPayDiff > Mathf.Floor(UnityEngine.Random.Range(this.laundererData.MinLaunderAmount, this.laundererData.MaxLaunderAmount)) && shouldRandomizeChance < 30f)
             {
                 if (this.laundererData.CutPercentage <= 30.0)
                 {
@@ -279,26 +236,12 @@ namespace NPCLaunderers.NPCScripts
              this.nPC.SendTextMessage(message);
         }
 
-        private System.Collections.IEnumerator AddContractListener()
+        private System.Collections.IEnumerator AddContractListener(Contract contract)
         {
             yield return new WaitForSecondsRealtime(3f);
             if (this.withContract) yield break;
             string contractName = $"Deal for {this.nPC.FirstName}";
-            Contract contract = Contract.Contracts
-#if IL2CPP
-                ._items
-#endif
-                .FirstOrDefault(c => (c.name == contractName || c.title == contractName) && c.QuestState == EQuestState.Active);
 
-            while (contract == null)
-            {
-                yield return new WaitForSeconds(1f);
-                contract = Contract.Contracts
-#if IL2CPP
-                ._items
-#endif
-                .FirstOrDefault(c => (c.name == contractName || c.title == contractName) && c.QuestState == EQuestState.Active);
-            }
 #if IL2CPP
             Action<EQuestState> questEndListener = new Action<EQuestState>((result) =>
 #else
@@ -369,6 +312,12 @@ namespace NPCLaunderers.NPCScripts
             });
             contract.onQuestEnd.AddListener(questEndListener);
             this.withContract = true;
+
+            QuestHUDUI contractUI = contract.hudUI;
+            if (!contractUI.MainLabel.text.Contains("EVENT"))
+            {
+                contractUI.MainLabel.text = $"<color=#16F01C>[EVENT]</color> {contractUI.MainLabel.text}";
+            }
             MelonLogger.Msg($"{this.nPC.FirstName}: Added active contract listner");
             yield break;
         }
@@ -382,6 +331,102 @@ namespace NPCLaunderers.NPCScripts
             if (randomChance >= 60)
             {
                 this.RequireMix();
+            }
+        }
+
+        public void OnDestroy()
+        {
+            this.laundererData = null;
+            this.isMainDialogueReady = false;
+            this.isDialogueInitReady = false;
+            this.nPC = null;
+            this.dialogueController = null;
+            this.laundererUI = null;
+            this.upfrontInstance = 0f;
+            this.withContract = false;
+        }
+
+        private void Update()
+        {
+            if (!this.isCheckingLaundry)
+                MelonCoroutines.Start(StartLaundryCheck());
+            if (!this.isCheckingDialouge)
+                MelonCoroutines.Start(StartDialougeCheck());
+            if (!this.isCheckingSavedLaundry)
+                MelonCoroutines.Start(StartSavedLaundryCheck());
+        }
+
+        // Initializers and Updaters
+        private System.Collections.IEnumerator StartLaundryCheck()
+        {
+            this.isCheckingLaundry = true;
+            yield return new WaitForSecondsRealtime(1f);
+            if (this.laundererData.isUnlocked && this.laundererData.CurrentLaunderAmount > 0f)
+            {
+                if (this.laundererData.CurrentTimeLeftSeconds > 0f)
+                {
+                    this.laundererData.CurrentTimeLeftSeconds -= 1;
+                    this.isCheckingLaundry = false;
+                    yield break;
+                }
+                this.GiveLaunderedPay();
+            }
+            this.isCheckingLaundry = false;
+        }
+        private System.Collections.IEnumerator StartDialougeCheck()
+        {
+            Debug.Log($"{this.nPC.FirstName} - Unlocked: {this.laundererData.isUnlocked}, Init Ready: {this.isDialogueInitReady}, Is Friendly: {this.isFriendly}, Main Ready: {this.isMainDialogueReady}");
+            this.isCheckingDialouge = true;
+            yield return new WaitForSecondsRealtime(1f);
+            if (this.dialogueController == null)
+            {
+                this.dialogueController = this.nPC.dialogueHandler.GetComponent<DialogueController>();
+            }
+            if (!this.laundererData.isUnlocked && !this.isDialogueInitReady && this.isFriendly)
+            {
+                this.nPC.SendTextMessage($"Hey, Let me know if you need a partnership.");
+                this.upfrontInstance = Mathf.Floor(UnityEngine.Random.Range(this.laundererData.MinLaunderAmount, this.laundererData.MaxLaunderAmount));
+                this.AddInitChoice();
+            }
+            if (this.laundererData.isUnlocked && !this.isMainDialogueReady && this.isFriendly)
+            {
+                Debug.Log("Setting up launder");
+                this.SetupLaunderDialog();
+                Debug.Log("DONE????");
+            }
+            this.isCheckingDialouge = false;
+        }
+        private System.Collections.IEnumerator StartSavedLaundryCheck()
+        {
+            this.isCheckingSavedLaundry = true;
+            yield return new WaitForSecondsRealtime(1f);
+            if (this.laundererData.isUnlocked && this.laundererData.RequiredProductID != "" && !this.withContract)
+            {
+                this.LoadLaundererData();
+            }
+            this.isCheckingSavedLaundry = false;
+        }
+
+
+        private void LoadLaundererData()
+        {
+            if (this.laundererData == null || this.laundererData.RequiredProductID == "") return;
+            Contract activeContract = Contract.FindObjectsOfType<Contract>()
+
+                .FirstOrDefault(c => {
+                    return c.QuestState == EQuestState.Active && c.GetQuestTitle().Contains(this.nPC.FirstName);
+                }
+#if IL2CPP
+                ,null
+#endif
+                ); // Don't remove pls T.T
+
+            if (
+                activeContract != null &&
+                !this.withContract
+                )
+            {
+                MelonCoroutines.Start(this.AddContractListener(activeContract));
             }
         }
     }
