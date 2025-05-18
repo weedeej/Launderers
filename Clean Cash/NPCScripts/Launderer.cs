@@ -30,7 +30,6 @@ using UnityEngine;
 using NPCLaunderers.LaundererSaveManager;
 using NPCLaunderers.UI;
 using MelonLoader;
-using UnityEngine.InputSystem;
 
 namespace NPCLaunderers.NPCScripts
 {

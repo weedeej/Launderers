@@ -2,8 +2,6 @@
 using NPCLaunderers.LaundererSaveManager;
 using HarmonyLib;
 using MelonLoader;
-using UnityEngine;
-
 #if IL2CPP
 using Il2CppScheduleOne.NPCs;
 #else
