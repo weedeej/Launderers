@@ -46,8 +46,8 @@ namespace NPCLaunderers.NPCScripts
         private bool isCheckingLaundry = false;
         private bool isCheckingDialouge = false;
         private bool isCheckingSavedLaundry = false;
+        private bool isUpdatingFriendly = false;
         private bool isFriendly = false;
-
 #if IL2CPP
         public Launderer(IntPtr pointer) : base(pointer) { }
 #endif
@@ -61,7 +61,6 @@ namespace NPCLaunderers.NPCScripts
             }
             this.laundererData = (new LaundererData(npc)).Load();
             this.nPC = npc;
-            this.isFriendly = npc.RelationData.RelationDelta >= 4f;
         }
 
         private void AddInitChoice()
@@ -353,6 +352,8 @@ namespace NPCLaunderers.NPCScripts
                 MelonCoroutines.Start(StartDialougeCheck());
             if (!this.isCheckingSavedLaundry)
                 MelonCoroutines.Start(StartSavedLaundryCheck());
+            if (!this.isUpdatingFriendly)
+                MelonCoroutines.Start(UpdateFriendlyState());
         }
 
         // Initializers and Updaters
@@ -405,6 +406,13 @@ namespace NPCLaunderers.NPCScripts
             }
             this.isCheckingSavedLaundry = false;
         }
+        private System.Collections.IEnumerator UpdateFriendlyState()
+        {
+            this.isUpdatingFriendly = true;
+            yield return new WaitForSecondsRealtime(5f); // Updates every 5s
+            this.isFriendly = this.nPC.RelationData.RelationDelta >= 4f;
+            this.isUpdatingFriendly = false;
+        }
 
 
         private void LoadLaundererData()
@@ -428,5 +436,6 @@ namespace NPCLaunderers.NPCScripts
                 MelonCoroutines.Start(this.AddContractListener(activeContract));
             }
         }
+
     }
 }
