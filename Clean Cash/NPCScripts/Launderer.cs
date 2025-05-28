@@ -200,7 +200,8 @@ namespace NPCLaunderers.NPCScripts
                 if (randomProduct == null)
                 {
                     MelonLogger.Error($"Product with ID {productId} not found.");
-                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#f54c4c>Product not found</color>", this.nPC.MugshotSprite, 5f, true);
+                    Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#f54c4c>Product not found. Launderers Mod disabled</color>", this.nPC.MugshotSprite, 5f, true);
+                    MelonMod.FindMelon("NPCLaunderers", "weedeej").Unregister("Product not found. Launderers Mod disabled");
                     return;
                 }
             }
@@ -229,7 +230,6 @@ namespace NPCLaunderers.NPCScripts
             QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
             
             string message = $"Hey, I wanna strengthen our partnership. How about we do a session.\n\nI need you to bring me <color=#6b9cff>3x {randomProduct.Name}</color> in <b>BEST</b> quality you can get at <color=#6b9cff>6:00am to 12:00pm</color>.\nMeet me <color=#6b9cff>{deliveryLocation.LocationDescription}</color>.";
-            //MelonCoroutines.Start(this.AddContractListener());
 
              this.nPC.SendTextMessage(message);
         }
@@ -322,11 +322,14 @@ namespace NPCLaunderers.NPCScripts
 
         public void WeekPass()
         {
+            bool shouldRandomizeCut = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableEnvy");
+            bool shouldRequestProduct = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableCutDecreaseEvent");
             if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
-            this.RandomizeCut();
+            if (shouldRandomizeCut)
+                this.RandomizeCut();
 
             int randomChance = UnityEngine.Random.Range(0, 100);
-            if (randomChance >= 60)
+            if (randomChance >= 60 && shouldRequestProduct)
             {
                 this.RequireMix();
             }
@@ -399,8 +402,9 @@ namespace NPCLaunderers.NPCScripts
         private System.Collections.IEnumerator StartSavedLaundryCheck()
         {
             this.isCheckingSavedLaundry = true;
-            yield return new WaitForSecondsRealtime(1f);
-            if (this.laundererData.isUnlocked && this.laundererData.RequiredProductID != "" && !this.withContract)
+            yield return new WaitForSecondsRealtime(3f);
+            bool shouldRequestProduct = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableCutDecreaseEvent");
+            if (this.laundererData.isUnlocked && this.laundererData.RequiredProductID != "" && !this.withContract && shouldRequestProduct)
             {
                 this.LoadLaundererData();
             }
@@ -430,10 +434,23 @@ namespace NPCLaunderers.NPCScripts
 
             if (
                 activeContract != null &&
-                !this.withContract
+                !this.withContract &&
+                activeContract.ProductList.entries
+#if IL2CPP
+                ._items
+#endif
+                .Any(
+#if IL2CPP
+                    new Func<ProductList.Entry, bool>
+#endif
+                    (e => e.ProductID == this.laundererData.RequiredProductID))
                 )
             {
                 MelonCoroutines.Start(this.AddContractListener(activeContract));
+            }
+            if (activeContract == null && !this.withContract && this.laundererData.RequiredProductID != "")
+            {
+                this.RequireMix(this.laundererData.RequiredProductID);
             }
         }
 

@@ -26,9 +26,14 @@ namespace NPCLaunderers
 #endif
         public override void OnInitializeMelon()
         {
+            MelonPreferences.CreateCategory("NPCLaunderers", "NPCLaunderers Settings");
+            MelonPreferences.CreateEntry("NPCLaunderers", "EnableEnvy", true, "Enable Envy", "Allows your launderers to get envy of what you earn and request more cut.");
+            MelonPreferences.CreateEntry("NPCLaunderers", "EnableCutDecreaseEvent", true, "Enable Request Product", "Allows your launderers to request a product to reduce cut");
+            MelonPreferences.Save();
 #if IL2CPP
             ClassInjector.RegisterTypeInIl2Cpp<Launderer>();
             ClassInjector.RegisterTypeInIl2Cpp<LaundererData>();
+
             try
             {
                 Stream bundleStream = MelonAssembly.Assembly.GetManifestResourceStream("NPCLaunderers.Assets.launderers.assetbundle");
