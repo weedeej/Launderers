@@ -12,7 +12,7 @@ using NPCLaunderers.NPCScripts;
 using MelonLoader;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(NPCLaunderers.Core), "NPCLaunderers", "1.0.2", "weedeej", null)]
+[assembly: MelonInfo(typeof(NPCLaunderers.Core), "NPCLaunderers", "1.0.3", "weedeej", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 namespace NPCLaunderers
