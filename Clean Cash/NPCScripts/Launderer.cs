@@ -26,6 +26,7 @@ using ScheduleOne.Money;
 using ScheduleOne.ItemFramework;
 using UnityEngine.Events;
 #endif
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using NPCLaunderers.LaundererSaveManager;
 using NPCLaunderers.UI;
@@ -48,12 +49,14 @@ namespace NPCLaunderers.NPCScripts
         private bool isCheckingSavedLaundry = false;
         private bool isUpdatingFriendly = false;
         private bool isFriendly = false;
+        private Il2CppArrayBase<DeliveryLocation> locations;
 #if IL2CPP
         public Launderer(IntPtr pointer) : base(pointer) { }
 #endif
         public void Awake()
         {
             NPC npc = GetComponent<NPC>();
+            locations = DeliveryLocation.FindObjectsOfType<DeliveryLocation>();
             if (npc == null)
             {
                 MelonLogger.Error("Launderer component is not attached to an NPC.");
@@ -69,12 +72,14 @@ namespace NPCLaunderers.NPCScripts
 #if IL2CPP
             Il2CppSystem.Collections.Generic.List<DialogueNodeData> nodeDataList = new Il2CppSystem.Collections.Generic.List<DialogueNodeData>();
             nodeDataList.Add(nodeData);
-            newChoice.Conversation = new DialogueContainer() { DialogueNodeData = nodeDataList, name = "LAUNDER_INIT_CONTAINER" };
+            newChoice.Conversation = ScriptableObject.CreateInstance<DialogueContainer>();
+            newChoice.Conversation.name = "LAUNDER_INIT_CONTAINER";
+            newChoice.Conversation.DialogueNodeData = nodeDataList;
             newChoice.onChoosen.AddListener(new Action(() =>
             {
 
-                this.nPC.dialogueHandler.InitializeDialogue(newChoice.Conversation, true, "LAUNDER_INIT_NODE");
-                this.nPC.dialogueHandler.onDialogueChoiceChosen.AddListener(new Action<string>((label) => {
+                this.nPC.DialogueHandler.InitializeDialogue(newChoice.Conversation, true, "LAUNDER_INIT_NODE");
+                this.nPC.DialogueHandler.onDialogueChoiceChosen.AddListener(new Action<string>((label) => {
                     if (label == "ACCEPT_LAUNDER_TERMS") {
                         this.laundererData.isUnlocked = true;
                         this.dialogueController.Choices.Remove(newChoice);
@@ -188,7 +193,11 @@ namespace NPCLaunderers.NPCScripts
             if (productId == null)
             {
                 int randomIndex = UnityEngine.Random.Range(0, ProductManager.DiscoveredProducts.Count - 1);
-                randomProduct = ProductManager.DiscoveredProducts[randomIndex];
+                randomProduct = ProductManager.DiscoveredProducts
+#if IL2CPP
+                        ._items
+#endif
+                        [randomIndex];
             } else
             {
                 randomProduct = ProductManager.DiscoveredProducts
@@ -222,12 +231,11 @@ namespace NPCLaunderers.NPCScripts
             entries.Add(entry);
             ProductList productList = new ProductList() { entries = entries };
 
-            DeliveryLocation[] locations = DeliveryLocation.FindObjectsOfType<DeliveryLocation>();
             DeliveryLocation deliveryLocation = locations[UnityEngine.Random.Range(0, locations.Length)];
 
             ContractInfo contractInfo = new ContractInfo(0, new ProductList() { entries = entries }, deliveryLocation.StaticGUID, new QuestWindowConfig { WindowStartTime = 600, WindowEndTime = 1200, IsEnabled = true }, false, 1300, 0, false);
-            
-            QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
+            QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, $"Deal for {this.nPC.FirstName}", $"Your launderer, {this.nPC.FirstName} wants to strengthen your partnership.", Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
+            // QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
             
             string message = $"Hey, I wanna strengthen our partnership. How about we do a session.\n\nI need you to bring me <color=#6b9cff>3x {randomProduct.Name}</color> in <b>BEST</b> quality you can get at <color=#6b9cff>6:00am to 12:00pm</color>.\nMeet me <color=#6b9cff>{deliveryLocation.LocationDescription}</color>.";
 
@@ -378,12 +386,12 @@ namespace NPCLaunderers.NPCScripts
         }
         private System.Collections.IEnumerator StartDialougeCheck()
         {
-            Debug.Log($"{this.nPC.FirstName} - Unlocked: {this.laundererData.isUnlocked}, Init Ready: {this.isDialogueInitReady}, Is Friendly: {this.isFriendly}, Main Ready: {this.isMainDialogueReady}");
+            // Debug.Log($"{this.nPC.FirstName} - Unlocked: {this.laundererData.isUnlocked}, Init Ready: {this.isDialogueInitReady}, Is Friendly: {this.isFriendly}, Main Ready: {this.isMainDialogueReady}");
             this.isCheckingDialouge = true;
             yield return new WaitForSecondsRealtime(1f);
             if (this.dialogueController == null)
             {
-                this.dialogueController = this.nPC.dialogueHandler.GetComponent<DialogueController>();
+                this.dialogueController = this.nPC.DialogueHandler.GetComponent<DialogueController>();
             }
             if (!this.laundererData.isUnlocked && !this.isDialogueInitReady && this.isFriendly)
             {
@@ -393,9 +401,9 @@ namespace NPCLaunderers.NPCScripts
             }
             if (this.laundererData.isUnlocked && !this.isMainDialogueReady && this.isFriendly)
             {
-                Debug.Log("Setting up launder");
+                // Debug.Log("Setting up launder");
                 this.SetupLaunderDialog();
-                Debug.Log("DONE????");
+                // Debug.Log("DONE????");
             }
             this.isCheckingDialouge = false;
         }
@@ -424,9 +432,7 @@ namespace NPCLaunderers.NPCScripts
             if (this.laundererData == null || this.laundererData.RequiredProductID == "") return;
             Contract activeContract = Contract.FindObjectsOfType<Contract>()
 
-                .FirstOrDefault(c => {
-                    return c.QuestState == EQuestState.Active && c.GetQuestTitle().Contains(this.nPC.FirstName);
-                }
+                .FirstOrDefault(c => c.State == EQuestState.Active && c.GetQuestTitle().Contains(this.nPC.FirstName)
 #if IL2CPP
                 ,null
 #endif
