@@ -222,9 +222,10 @@ namespace NPCLaunderers.NPCScripts
 #else
             List<ProductList.Entry> entries = new List<ProductList.Entry>();
 #endif
+            EQuality quality = this.laundererData.LaundererTier > LaundererTier.Medium ? randomProduct.DrugType == EDrugType.Methamphetamine ? EQuality.Premium : EQuality.Heavenly : EQuality.Standard;
             ProductList.Entry entry = new ProductList.Entry {
                 ProductID = randomProduct.ID,
-                Quality = randomProduct.DrugType == EDrugType.Methamphetamine ? EQuality.Premium : EQuality.Heavenly,
+                Quality = quality,
                 Quantity = 3
             };
             // Not adding listener on Mono
