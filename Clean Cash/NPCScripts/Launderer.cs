@@ -194,7 +194,11 @@ namespace NPCLaunderers.NPCScripts
                 }
                 return;
             }
+        }
 
+        public void WeeklyInvestment()
+        {
+            if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
             if (this.laundererData.WeekLaunderReturn >= (this.laundererData.MinLaunderAmount * 7)) // If consistently washes money
             {
                 if (this.laundererData.CutPercentage <= 5.0)
@@ -208,6 +212,7 @@ namespace NPCLaunderers.NPCScripts
                         $"Launderer_${this.nPC.FirstName}_INVESTMENT",
                         (float)freeMoney, 1, $"{this.nPC.FirstName}_INVESTMENT");
                     // Maybe future update???? Investments? Where should we use the computed investments if we are to do it.
+                    this.laundererData.TotalInvestment  += (float)freeMoney;
                     return;
                 }
                 double randomCutDecrease = Mathf.Floor(UnityEngine.Random.Range(1, 10));
@@ -221,7 +226,7 @@ namespace NPCLaunderers.NPCScripts
             }
         }
 
-        public void RequireMix(string productId = null)
+        public void RequireMix(string productId = null, int amount = 3, string customMessage = "Hey, I wanna strengthen our partnership. How about we do a session.")
         {
             if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
             ProductDefinition randomProduct;
@@ -257,11 +262,12 @@ namespace NPCLaunderers.NPCScripts
 #else
             List<ProductList.Entry> entries = new List<ProductList.Entry>();
 #endif
+            
             EQuality quality = this.laundererData.LaundererTier > LaundererTier.Medium ? randomProduct.DrugType == EDrugType.Methamphetamine ? EQuality.Premium : EQuality.Heavenly : EQuality.Standard;
             ProductList.Entry entry = new ProductList.Entry {
                 ProductID = randomProduct.ID,
                 Quality = quality,
-                Quantity = 3
+                Quantity = amount,
             };
             // Not adding listener on Mono
             entries.Add(entry);
@@ -273,8 +279,8 @@ namespace NPCLaunderers.NPCScripts
             QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, $"Deal for {this.nPC.FirstName}", $"Your launderer, {this.nPC.FirstName} wants to strengthen your partnership.", Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
             // QuestManager.Instance.CreateContract_Networked(Player.Local.Connection, Guid.NewGuid().ToString(), true, this.nPC.NetworkObject, contractInfo, new GameDateTime(1300), TimeManager.Instance.GetDateTime());
             
-            string message = $"Hey, I wanna strengthen our partnership. How about we do a session.\n\nI need you to bring me <color=#6b9cff>3x {randomProduct.Name}</color> in <b>BEST</b> quality you can get at <color=#6b9cff>6:00am to 12:00pm</color>.\nMeet me <color=#6b9cff>{deliveryLocation.LocationDescription}</color>.";
-
+            string message = $"{customMessage}\n\nI need you to bring me <color=#6b9cff>3x {randomProduct.Name}</color> in <b>BEST</b> quality you can get at <color=#6b9cff>6:00am to 12:00pm</color>.\nMeet me <color=#6b9cff>{deliveryLocation.LocationDescription}</color>.";
+            
              this.nPC.SendTextMessage(message);
         }
 
@@ -366,13 +372,22 @@ namespace NPCLaunderers.NPCScripts
 
         public void WeekPass()
         {
-            bool shouldRandomizeCut = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableEnvy");
-            bool shouldRequestProduct = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableCutDecreaseEvent");
             if (this.nPC == null || this.dialogueController == null || !this.laundererData.isUnlocked) return;
+            
+            // envy
+            bool shouldRandomizeCut = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableEnvy");
             if (shouldRandomizeCut)
                 this.RandomizeCut();
 
+            // invest
+            bool shouldInvest = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableNPCInvestment");
+            if (shouldInvest)
+                this.WeeklyInvestment();
+            
+            
+            // Require mix
             int randomChance = UnityEngine.Random.Range(0, 100);
+            bool shouldRequestProduct = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableCutDecreaseEvent");
             if (randomChance >= 60 && shouldRequestProduct)
             {
                 this.RequireMix();
@@ -389,6 +404,58 @@ namespace NPCLaunderers.NPCScripts
             this.laundererUI = null;
             this.upfrontInstance = 0f;
             this.withContract = false;
+        }
+
+        public void DayPass()
+        {
+            // Reused. Create a global var
+            bool shouldInvest = MelonPreferences.GetEntryValue<bool>("NPCLaunderers", "EnableNPCInvestment");
+            if (!shouldInvest) return;
+            var minmax = Launderers.LaunderAmountRanges[LaundererTier.Low];
+            
+            switch (this.laundererData.LaundererTier)
+            {
+                case LaundererTier.Low:
+                    if (this.laundererData.TotalInvestment >= minmax[1])
+                        PromoteTo(LaundererTier.Medium);
+                    return;
+                case LaundererTier.Medium:
+                    minmax = Launderers.LaunderAmountRanges[LaundererTier.Medium];
+                    if (this.laundererData.TotalInvestment >= minmax[1])
+                        PromoteTo(LaundererTier.High);
+                    return;
+                case LaundererTier.High:
+                    minmax = Launderers.LaunderAmountRanges[LaundererTier.High];
+                    if (this.laundererData.TotalInvestment >= minmax[1])
+                        PromoteTo(LaundererTier.Highest);
+                    return;
+                case LaundererTier.Highest:
+                    if (this.laundererData.TotalInvestment >= minmax[0]) // Earning threshold is Low's min
+                    {
+                        // Investment return? idk how money works.
+                        float freeMoney = this.laundererData.TotalInvestment >= 13500 ? 13500 * 0.03f : this.laundererData.TotalInvestment * 0.03f; // dividends? But daily?
+                        NetworkSingleton<MoneyManager>.Instance.ChangeCashBalance(freeMoney, true);
+                        Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"Dividends are being sent out <color=#16F01C>${freeMoney}</color>", this.nPC.MugshotSprite, 2f, true);
+                    }
+                    break;
+                default:
+                    return;
+            }
+        }
+
+        // Public so it appears in uniex
+        public void PromoteTo(LaundererTier tier, bool silent = false)
+        {
+            var newMinMax =  Launderers.LaunderAmountRanges[LaundererTier.High];
+            this.laundererData.LaundererTier = LaundererTier.High;
+            this.laundererData.MinLaunderAmount  = newMinMax[0];
+            this.laundererData.MaxLaunderAmount = newMinMax[1];
+            this.laundererData.TotalInvestment = 0f;
+            if (!silent)
+            {
+                string message = $"Thanks to you I grew my business, I can now wash <color=#16F01C>${newMinMax[0]}</color> - <color=#16F01C>${newMinMax[1]}</color>";
+                this.nPC.SendTextMessage(message);
+            }
         }
 
         private void Update()

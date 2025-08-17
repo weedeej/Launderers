@@ -29,6 +29,10 @@ namespace NPCLaunderers
             MelonPreferences.CreateCategory("NPCLaunderers", "NPCLaunderers Settings");
             MelonPreferences.CreateEntry("NPCLaunderers", "EnableEnvy", true, "Enable Envy", "Allows your launderers to get envy of what you earn and request more cut.");
             MelonPreferences.CreateEntry("NPCLaunderers", "EnableCutDecreaseEvent", true, "Enable Request Product", "Allows your launderers to request a product to reduce cut");
+            MelonPreferences.CreateEntry("NPCLaunderers", "EnableNPCInvestment", true, "Enable NPC Investment",
+                "Allows your launderers to invest in your business if you are on a streak with them. You will earn money, and they will too.");
+            MelonPreferences.CreateEntry("NPCLaunderers", "EnableDividendAlerts", true, "Enable Dividends Alert",
+                "[Works only with NPCInvestment ON]\nReceive daily notification for dividends you earned if you have very good relationship with launderers.");
             MelonPreferences.Save();
 #if IL2CPP
             ClassInjector.RegisterTypeInIl2Cpp<Launderer>();
@@ -100,14 +104,23 @@ namespace NPCLaunderers
                     launderer.laundererData.Save();
                 }
             });
+            // There's a better way to do this.
             Action weekPassListener = new Action(() => {
                 foreach (Launderer launderer in GameObject.FindObjectsOfType<Launderer>())
                 {
                     launderer.WeekPass();
                 }
             });
+            
+            Action dayPassListener = new Action(() => {
+                foreach (Launderer launderer in GameObject.FindObjectsOfType<Launderer>())
+                {
+                    launderer.DayPass();
+                }
+            });
             SaveManager.Instance.onSaveStart.AddListener(saveListener);
             TimeManager.Instance.onWeekPass += weekPassListener;
+            TimeManager.Instance.onDayPass += dayPassListener;
         }
 
     }

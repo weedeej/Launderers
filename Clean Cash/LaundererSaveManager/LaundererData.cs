@@ -33,6 +33,7 @@ namespace NPCLaunderers.LaundererSaveManager
         public float WeekCutAmount;
         public string RequiredProductID;
         public float InstanceMaxLaunderAmount;
+        public float TotalInvestment;
         public float ReturnLaunderAmount { get => Mathf.Floor(this.CurrentLaunderAmount - (this.CurrentLaunderAmount * (float)(this.CutPercentage / 100))); }
         public float CutAmount { get => Mathf.Floor(this.CurrentLaunderAmount * (float)(this.CutPercentage / 100)); }
         private string SaveFilePath;
@@ -55,6 +56,7 @@ namespace NPCLaunderers.LaundererSaveManager
             this.InstanceMaxLaunderAmount = 0f;
             this.RequiredProductID = "";
             this.CutPercentage = 10f;
+            this.TotalInvestment = 0f;
 
             string saveDirectory = LoadManager.Instance.LoadedGameFolderPath;
             int separatorIndex = saveDirectory.IndexOf("Saves\\") + 5;
@@ -85,6 +87,7 @@ namespace NPCLaunderers.LaundererSaveManager
             jObject.Add(new JProperty("WeekCutAmount", this.WeekCutAmount));
             jObject.Add(new JProperty("RequiredProductID", this.RequiredProductID));
             jObject.Add(new JProperty("InstanceMaxLaunderAmount", this.InstanceMaxLaunderAmount));
+            jObject.Add(new JProperty("TotalInvestment", this.TotalInvestment));
 
             File.WriteAllText(this.SaveFilePath, jObject.ToString());
             Debug.Log($"{this.NPC.FirstName} - Saved to: {this.SaveFilePath}");
@@ -107,6 +110,7 @@ namespace NPCLaunderers.LaundererSaveManager
             this.WeekCutAmount = jObject.Value<float>("WeekCutAmount");
             this.InstanceMaxLaunderAmount = jObject.Value<float>("InstanceMaxLaunderAmount");
             this.RequiredProductID = jObject.Value<string>("RequiredProductID");
+            this.TotalInvestment = jObject.Value<float>("TotalInvestment");
             return this;
         }
     }
