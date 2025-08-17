@@ -205,8 +205,7 @@ namespace NPCLaunderers.NPCScripts
                 {
                     // Give cash instead
                     double freeMoney = this.laundererData.WeekCutAmount * 0.2;
-                    this.nPC.SendTextMessage($"We have come so far from a very long way. " +
-                                             $"I'll be investing in your shady business, whatever that is. " +
+                    this.nPC.SendTextMessage($"I want to invest in your shady business, whatever that is.\n\n" +
                                              $"More profit for you, More work for me. I just sent it to your bank.");
                     NetworkSingleton<MoneyManager>.Instance.CreateOnlineTransaction(
                         $"Launderer_${this.nPC.FirstName}_INVESTMENT",
