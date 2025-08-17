@@ -11,6 +11,7 @@ using Il2CppScheduleOne.UI;
 using Il2CppScheduleOne.DevUtilities;
 using Il2CppScheduleOne.Money;
 using Il2CppScheduleOne.ItemFramework;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 #else
 using ScheduleOne.NPCs;
 using ScheduleOne.Dialogue;
@@ -26,7 +27,6 @@ using ScheduleOne.Money;
 using ScheduleOne.ItemFramework;
 using UnityEngine.Events;
 #endif
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using NPCLaunderers.LaundererSaveManager;
 using NPCLaunderers.UI;
@@ -49,10 +49,17 @@ namespace NPCLaunderers.NPCScripts
         private bool isCheckingSavedLaundry = false;
         private bool isUpdatingFriendly = false;
         private bool isFriendly = false;
-        private Il2CppArrayBase<DeliveryLocation> locations;
 #if IL2CPP
         public Launderer(IntPtr pointer) : base(pointer) { }
 #endif
+        
+        private
+#if IL2CPP
+          Il2CppArrayBase<DeliveryLocation>
+            #elif MONO
+            DeliveryLocation[]
+#endif
+            locations;
         public void Awake()
         {
             NPC npc = GetComponent<NPC>();
@@ -93,12 +100,14 @@ namespace NPCLaunderers.NPCScripts
 
             List<DialogueNodeData> nodeDataList = new List<DialogueNodeData>();
             nodeDataList.Add(nodeData);
-            newChoice.Conversation = new DialogueContainer() { DialogueNodeData = nodeDataList, name = "LAUNDER_INIT_CONTAINER" };
+            newChoice.Conversation = ScriptableObject.CreateInstance<DialogueContainer>();
+            newChoice.Conversation.name = "LAUNDER_INIT_CONTAINER";
+            newChoice.Conversation.DialogueNodeData = nodeDataList;
             newChoice.onChoosen.AddListener(() =>
             {
 
-                this.nPC.dialogueHandler.InitializeDialogue(newChoice.Conversation, true, "LAUNDER_INIT_NODE");
-                this.nPC.dialogueHandler.onDialogueChoiceChosen.AddListener((label) => {
+                this.nPC.DialogueHandler.InitializeDialogue(newChoice.Conversation, true, "LAUNDER_INIT_NODE");
+                this.nPC.DialogueHandler.onDialogueChoiceChosen.AddListener((label) => {
                     if (label == "ACCEPT_LAUNDER_TERMS") {
                         MoneyManager moneyManager = NetworkSingleton<MoneyManager>.Instance;
                         moneyManager.ChangeCashBalance(-upfrontInstance, true, true);
@@ -183,6 +192,32 @@ namespace NPCLaunderers.NPCScripts
                     string message = $"Hey, You seem to be doing so well. To make things fair, I'm changing my cut to <color=#ff6b6b>{this.laundererData.CutPercentage}%</color>.";
                     this.nPC.SendTextMessage(message);
                 }
+                return;
+            }
+
+            if (this.laundererData.WeekLaunderReturn >= (this.laundererData.MinLaunderAmount * 7)) // If consistently washes money
+            {
+                if (this.laundererData.CutPercentage <= 5.0)
+                {
+                    // Give cash instead
+                    double freeMoney = this.laundererData.WeekCutAmount * 0.2;
+                    this.nPC.SendTextMessage($"We have come so far from a very long way. " +
+                                             $"I'll be investing in your shady business, whatever that is. " +
+                                             $"More profit for you, More work for me. I just sent it to your bank.");
+                    NetworkSingleton<MoneyManager>.Instance.CreateOnlineTransaction(
+                        $"Launderer_${this.nPC.FirstName}_INVESTMENT",
+                        (float)freeMoney, 1, $"{this.nPC.FirstName}_INVESTMENT");
+                    // Maybe future update???? Investments? Where should we use the computed investments if we are to do it.
+                    return;
+                }
+                double randomCutDecrease = Mathf.Floor(UnityEngine.Random.Range(1, 10));
+                while (this.laundererData.CutPercentage - randomCutDecrease < 5)
+                {
+                    randomCutDecrease = Mathf.Floor(UnityEngine.Random.Range(1, 10));
+                }
+                this.laundererData.CutPercentage -= randomCutDecrease;
+                string message = $"FOR OUR FUTURE TRANSACTIONS! Decreasing my cut to <color=#16F01C>{this.laundererData.CutPercentage}%</color>.";
+                this.nPC.SendTextMessage(message);
             }
         }
 
@@ -210,7 +245,7 @@ namespace NPCLaunderers.NPCScripts
                 {
                     MelonLogger.Error($"Product with ID {productId} not found.");
                     Singleton<NotificationsManager>.Instance.SendNotification(this.nPC.fullName, $"<color=#f54c4c>Product not found. Launderers Mod disabled</color>", this.nPC.MugshotSprite, 5f, true);
-                    MelonMod.FindMelon("NPCLaunderers", "weedeej").Unregister("Product not found. Launderers Mod disabled");
+                    MelonBase.FindMelon("NPCLaunderers", "weedeej").Unregister("Product not found. Launderers Mod disabled");
                     return;
                 }
             }
