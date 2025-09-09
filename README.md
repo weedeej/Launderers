@@ -10,6 +10,7 @@ Adds a new way of laundering money in Schedule I. Hire NPC Business Owners to la
 - **Custom UI:** Thanks to [this discord](https://discord.gg/QMzd7u6yZb), I learned how to created prefabs for custom UIs.
 - **Envy System:** The Launderer will get envious of your money and will ask for a higher cut percentage at random.
 - **Launderer Mix Requests:** The Launderer will ask for a mix request at random. This is an event that can increase/decrease the Launderer's cut percentage.
+- **NPC Investments:** After a streak, Launderers will invest in your shady business and you will earn some "daily" cash.
 
 ## Launderers
 
@@ -30,10 +31,27 @@ Launder Range (random)
 - Ray (Highest)
 - Herbert (Highest)
 
+## Config
+
+MelonPreferences.cfg
+
+```
+[NPCLaunderers]
+# Allows your launderers to get envy of what you earn and request more cut.
+EnableEnvy = true
+# Allows your launderers to request a product to reduce cut
+EnableCutDecreaseEvent = true
+# Allows your launderers to invest in your business if you are on a streak with them. You will earn money, and they will too.
+EnableNPCInvestment = true
+# [Works only with NPCInvestment ON]
+# Receive daily notification for dividends you earned if you have very good relationship with launderers.
+EnableDividendAlerts = true
+```
+
 ## Planned Features
 
 - **More random mixes:** Currently, the Launderer will only ask for a discovered mix. I plan to add more random mixes that can be requested by the Launderer.
-- **Streaks:** If you transact with a Launderer for a certain amount of time consistently, The Launderer can give you a bonus decrease in their cut percentage. This will be a random event that can occur at any time.
+- **Streaks:** ~~If you transact with a Launderer for a certain amount of time consistently, The Launderer can give you a bonus decrease in their cut percentage. This will be a random event that can occur at any time.~~
 - **Open for suggestions:** If you have any ideas for features, please feel free to open an issue on this repository or in the discord linked below (Find this mod under mod-releases channel).
 
 ## Installation
